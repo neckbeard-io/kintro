@@ -72,7 +72,7 @@ def cli(user, password, server, library, edit, dry_run, find_path, replace_path)
                             with open(file_path, 'w') as writer:
                                 writer.write(intro_entry)
                         logger.info(
-                            'show="%s" season=%s episode=%s title="%s" location="%s start=%s end=%s file=%s"' %
+                            'show="%s" season=%s episode=%s title="%s" location="%s start=%s end=%s file="%s"' %
                             (episode.grandparentTitle, episode.seasonNumber, episode.episodeNumber,
                              episode.title, episode.locations, start, end, file_path)
                         )
