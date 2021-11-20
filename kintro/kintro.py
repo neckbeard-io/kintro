@@ -16,7 +16,8 @@ import sys
     '--edit',
     type=click.Choice(['cut', 'mute', 'scene', 'commercial']),
     default='scene',
-    help='\bcut: Makes it so the intro is completely gone ' \
+    #TODO: convert all this help stuff to docstring format
+    help='cut: Makes it so the intro is completely gone ' \
          'mute: Makes it so the intro\'s audio is muted ' \
          'scene: Makes it so the nextscene action skips to the end of the intro ' \
          'commercial: Makes it so the intro is skipped once (like cut), but is then seekable after'
