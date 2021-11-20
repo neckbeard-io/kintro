@@ -18,7 +18,7 @@ class LibType(enum.Enum):
 
 @click.command()
 @click.option('--user', required=True, help='plex.tv username for server discovery')
-@click.option('--password', required=True, help='plex.tv password')
+@click.option('--password', required=True, prompt=True, hide_input=True, help='plex.tv password')
 @click.option('--server', required=True, help='Plex server to use')
 @click.option('--library', required=True, default='TV Shows', help='Plex library to operate on')
 @click.option(
