@@ -3,6 +3,7 @@ from kintro.decisions import DECISION_TYPES
 from click_option_group import optgroup, AllOptionGroup
 
 import click
+import json
 import logging
 import os
 import sys
@@ -23,6 +24,7 @@ import sys
          'commercial: Makes it so the intro is skipped once (like cut), but is then seekable after'
 )
 @click.option('--dry-run', default=False, is_flag=True, help='Logs the .edl files kintro will write without writing them')
+@click.option('--filter-json', default=None, help='json representing plex filters')
 @optgroup.group(
     'Find and Replace',
     cls=AllOptionGroup,
@@ -32,7 +34,7 @@ import sys
 @optgroup.option('--find-path', help='Find string')
 @optgroup.option('--replace-path', type=click.Path(exists=True), help='Replace directory')
 
-def cli(user, password, server, library, edit, dry_run, find_path, replace_path):
+def cli(user, password, server, library, edit, dry_run, filter_json, find_path, replace_path):
 
     formatter = logging.Formatter(
         fmt=(
@@ -49,7 +51,8 @@ def cli(user, password, server, library, edit, dry_run, find_path, replace_path)
 
     account = MyPlexAccount(user, password)
     plex = account.resource(server).connect()
-    tv = plex.library.section(library).search(libtype='episode')
+    more_search = {'filters': json.loads(filter_json)} if filter_json is not None else {}
+    tv = plex.library.section(library).search(libtype='episode', **more_search)
 
     for episode in tv:
         if episode.hasIntroMarker:
