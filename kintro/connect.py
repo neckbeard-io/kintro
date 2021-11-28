@@ -12,6 +12,7 @@ import click
 @click.pass_context
 def account(ctx, user, password, server):
 
+    ctx.obj['logger'].info(f'Connecting to plex via account({user}) and password')
     account = MyPlexAccount(user, password)
     ctx.obj['plex'] = account.resource(server).connect()
 
@@ -21,6 +22,7 @@ def account(ctx, user, password, server):
 @click.pass_context
 def server(ctx, url, token):
 
+    ctx.obj['logger'].info(f'Connecting to plex via url({url}) and token')
     ctx.obj['plex'] = PlexServer(url, token)
 
 account.add_command(sync)

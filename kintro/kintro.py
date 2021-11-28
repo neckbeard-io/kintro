@@ -25,6 +25,7 @@ def cli(ctx, log_level):
 
     ctx.obj = {}
     ctx.obj['logger'] = _init_logger('kintro', log_level)
+    ctx.obj['debug'] = log_level == logging.DEBUG
 
 cli.add_command(account)
 cli.add_command(server)
