@@ -14,5 +14,5 @@ setup(
     packages=['kintro'],
     keywords=['kodi', 'plex' 'intro'],
     classifiers=[],
-    install_requires=['click', 'click_option_group', 'plexapi']
+    install_requires=['click', 'click_option_group', 'plexapi', 'more_itertools>=7.1.0']
 )
