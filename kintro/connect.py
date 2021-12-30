@@ -7,9 +7,7 @@ from plexapi.server import PlexServer  # type: ignore[import]
 
 @click.group()
 @click.option("--user", required=True, help="plex.tv username for server discovery")
-@click.option(
-    "--password", required=True, prompt=True, hide_input=True, help="plex.tv password"
-)
+@click.option("--password", required=True, prompt=True, hide_input=True, help="plex.tv password")
 @click.option("--server", required=True, help="Plex server to use")
 @click.pass_context
 def account(ctx, user, password, server):

@@ -31,9 +31,7 @@ class LibType(enum.Enum):
 
 
 @click.command()
-@click.option(
-    "--library", required=True, default="TV Shows", help="Plex library to operate on"
-)
+@click.option("--library", required=True, default="TV Shows", help="Plex library to operate on")
 @click.option(
     "--edit",
     type=click.Choice(["cut", "mute", "scene", "commercial"]),
@@ -62,21 +60,12 @@ class LibType(enum.Enum):
 @optgroup.group(
     "Find and Replace",
     cls=AllOptionGroup,
-    help=(
-        "Find and Replace options for fixing file paths "
-        "(useful for plex servers running in containers)"
-    ),
+    help=("Find and Replace options for fixing file paths (useful for plex servers running in containers)"),
 )
 @optgroup.option("--find-path", help="Find string")
-@optgroup.option(
-    "--replace-path", type=click.Path(exists=True), help="Replace directory"
-)
-@click.option(
-    "--max-workers", default=4, help="Max Number of workers to process episodes"
-)
-@click.option(
-    "--worker-batch-size", default=10, help="Chunk of work to hand off to each worker"
-)
+@optgroup.option("--replace-path", type=click.Path(exists=True), help="Replace directory")
+@click.option("--max-workers", default=4, help="Max Number of workers to process episodes")
+@click.option("--worker-batch-size", default=10, help="Chunk of work to hand off to each worker")
 @click.pass_context
 def sync(
     ctx,
@@ -96,13 +85,9 @@ def sync(
     libtype = LibType(libtype.lower())
     edit = DECISION_TYPES[edit]
 
-    more_search = (
-        {"filters": json.loads(filter_json)} if filter_json is not None else {}
-    )
+    more_search = {"filters": json.loads(filter_json)} if filter_json is not None else {}
     tv = {
-        LibType.Episode: lambda: plex.library.section(library).search(
-            libtype="episode", **more_search
-        ),
+        LibType.Episode: lambda: plex.library.section(library).search(libtype="episode", **more_search),
         LibType.Show: lambda: itertools.chain(
             *(
                 show.episodes()
@@ -118,9 +103,7 @@ def sync(
         for episode in (
             tv
             if worker_batch_size == 1
-            else itertools.chain.from_iterable(
-                more_itertools.ichunked(tv, worker_batch_size)
-            )
+            else itertools.chain.from_iterable(more_itertools.ichunked(tv, worker_batch_size))
         ):
             handle_episode(
                 ctx=ctx,
@@ -176,9 +159,7 @@ def sync(
             stop_event=stop_event,
         )
 
-        ctx.obj["logger"].debug(
-            f"Starting worker fucntions on pool threads (#{max_workers})"
-        )
+        ctx.obj["logger"].debug(f"Starting worker fucntions on pool threads (#{max_workers})")
         res = executor.map(
             handle_eps,
             [x for x in range(0, max_workers)],
@@ -194,18 +175,12 @@ def sync(
                 for r in res:
                     ctx.obj["logger"].debug(f"Worker thread launch result: {r}")
             except Exception as e:
-                ctx.obj["logger"].exception(
-                    f"Error while checking worker thread status {e}"
-                )
+                ctx.obj["logger"].exception(f"Error while checking worker thread status {e}")
 
             try:
-                ctx.obj["logger"].debug(
-                    f"Submitter thread status {submitter_res.result()}"
-                )
+                ctx.obj["logger"].debug(f"Submitter thread status {submitter_res.result()}")
             except Exception as e:
-                ctx.obj["logger"].exception(
-                    f"Error while checking submitter thread status {e}"
-                )
+                ctx.obj["logger"].exception(f"Error while checking submitter thread status {e}")
 
             while True:
                 ctx.obj["logger"].debug("Looping on results")
@@ -230,16 +205,10 @@ def handle_episodes(
     replace_path: str,
     dry_run: bool,
 ) -> None:
-    ctx.obj["logger"].info(
-        f"Starting a episodes thread {threading.current_thread().name}"
-    )
-    ctx.obj["logger"].debug(
-        f"Waiting for start event on thread {threading.current_thread().name}"
-    )
+    ctx.obj["logger"].info(f"Starting a episodes thread {threading.current_thread().name}")
+    ctx.obj["logger"].debug(f"Waiting for start event on thread {threading.current_thread().name}")
     start_event.wait()
-    ctx.obj["logger"].debug(
-        f"Done Waiting for start event on thread {threading.current_thread().name}"
-    )
+    ctx.obj["logger"].debug(f"Done Waiting for start event on thread {threading.current_thread().name}")
     while True:
         try:
             episodes = list(episodes_source.pop())
@@ -265,9 +234,7 @@ def handle_episodes(
             )
             time.sleep(1)
         except Exception as e:
-            ctx.obj["logger"].warning(
-                f"Exception {e} in {threading.current_thread().name} continuing"
-            )
+            ctx.obj["logger"].warning(f"Exception {e} in {threading.current_thread().name} continuing")
             continue
     return None
 
