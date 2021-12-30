@@ -8,6 +8,8 @@ exclude = [
   ".git",
   "__pycache__",
   ".direnv",
+  ".cache",
+  ".env_cache",
   ".envrc",
   "build",
 ]
@@ -201,8 +203,9 @@ sections = [
   "LOCALFOLDER",
 ]
 use_parentheses = true
+skip_gitignore = true
 
 [tool.mypy]
 python_version = 3.6
-exclude = ".git|build|__pycache__|.direnv|.envrc|setup.py"
+exclude = ".git|build|__pycache__|.direnv|.cache|.env_cache|.envrc|setup.py"
 show_error_codes = true

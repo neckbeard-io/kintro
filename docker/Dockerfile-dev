@@ -6,22 +6,32 @@ FROM ${PYTHON_IMAGE}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
 
 # SLOWISH
-RUN apk add gcc \
-            python3-dev \
-            musl-dev \
-            g++ \
-	    git \
-	    jq \
+RUN apk add \
 	    bash \
-	    direnv \
-	    sudo \
-	    shadow \
-	    su-exec \
-	    procps \
-	    tzdata \
-	    coreutils \
+	    build-base \
+	    bzip2-dev \
 	    ca-certificates \
-	    openssh
+	    coreutils \
+	    curl \
+	    direnv \
+	    gcc \
+	    git \
+            g++ \
+	    jq \
+	    libffi-dev \
+	    linux-headers \
+            musl-dev \
+	    openssh \
+	    openssl-dev \
+	    procps \
+            python3-dev \
+	    readline-dev \
+	    shadow \
+            sqlite-dev  \
+	    su-exec \
+	    sudo \
+	    tzdata \
+	    zlib-dev
 
 RUN groupmod -g 1000 users \
         && useradd -u 1000 -U -s /bin/bash -G users,wheel kintro \
@@ -29,15 +39,16 @@ RUN groupmod -g 1000 users \
 	&& mkdir -p /home/kintro \
 	&& chown -R kintro.kintro /home/kintro
 
-RUN pip install virtualenv virtualenvwrapper pip-tools pre-commit
-
 USER kintro
 
+RUN curl -L https://pyenv.run | bash
+
 ENV SHELL=/bin/bash
-ENV PATH=/home/kintro/.local/bin:${PATH}
+ENV PATH=/home/kintro/.local/bin:/home/kintro/.pyenv/bin:${PATH}
 
 COPY bashrc /home/kintro/.bashrc
 COPY direnv.toml /home/kintro/.config/direnv/direnv.toml
+COPY direnvrc /home/kintro/.config/direnv/direnvrc
 
 VOLUME ["/data"]
 VOLUME ["/kintro"]
