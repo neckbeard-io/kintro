@@ -1,8 +1,8 @@
 from kintro.plex import sync
-from plexapi.myplex import MyPlexAccount # type: ignore[import]
-from plexapi.server import PlexServer # type: ignore[import]
 
 import click
+from plexapi.myplex import MyPlexAccount  # type: ignore[import]
+from plexapi.server import PlexServer  # type: ignore[import]
 
 
 @click.group()

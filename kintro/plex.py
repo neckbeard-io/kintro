@@ -1,16 +1,10 @@
-from click_option_group import optgroup, AllOptionGroup # type: ignore[import]
-from kintro.decisions import DECISION_TYPES
-
 import collections
 import concurrent.futures
-import click
 import enum
 import functools
 import itertools
 import json
-import more_itertools
 import os
-from plexapi.video import Episode # type: ignore[import]
 import queue
 import threading
 import time
@@ -18,6 +12,16 @@ from typing import (
     Deque,
     List,
 )
+
+from kintro.decisions import DECISION_TYPES
+
+import click
+from click_option_group import (  # type: ignore[import]
+    AllOptionGroup,
+    optgroup,
+)
+import more_itertools
+from plexapi.video import Episode  # type: ignore[import]
 
 
 @enum.unique
