@@ -11,7 +11,7 @@ import logging
     '--log-level',
     default='info',
     type=click.Choice(['debug', 'info', 'warning', 'error']),
-    help='Set the minimum log level'
+    help='Set the minimum log level',
 )
 @click.pass_context
 def cli(ctx, log_level):
