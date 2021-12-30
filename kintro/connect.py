@@ -1,6 +1,6 @@
 from kintro.plex import sync
-from plexapi.myplex import MyPlexAccount
-from plexapi.server import PlexServer
+from plexapi.myplex import MyPlexAccount # type: ignore[import]
+from plexapi.server import PlexServer # type: ignore[import]
 
 import click
 

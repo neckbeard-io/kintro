@@ -1,4 +1,4 @@
-from click_option_group import optgroup, AllOptionGroup
+from click_option_group import optgroup, AllOptionGroup # type: ignore[import]
 from kintro.decisions import DECISION_TYPES
 
 import collections
@@ -10,7 +10,7 @@ import itertools
 import json
 import more_itertools
 import os
-from plexapi.video import Episode
+from plexapi.video import Episode # type: ignore[import]
 import queue
 import threading
 import time
@@ -47,7 +47,7 @@ class LibType(enum.Enum):
 @click.option(
     '--libtype',
     default=LibType.Episode.value,
-    type=click.Choice((x.name for x in LibType), case_sensitive=False),
+    type=click.Choice([x.name for x in LibType], case_sensitive=False),
     help='type of search to do',
 )
 @click.option('--filter-json', default=None, help='json representing plex filters')
@@ -176,7 +176,7 @@ def handle_episodes(
     find_path: str,
     replace_path: str,
     dry_run: bool,
-) -> List[List[str]]:
+) -> None:
     ctx.obj['logger'].info(f'Starting a episodes thread {threading.current_thread().name}')
     ctx.obj['logger'].debug(f'Waiting for start event on thread {threading.current_thread().name}')
     start_event.wait()
