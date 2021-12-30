@@ -2,6 +2,17 @@
 requires = ["setuptools", "wheel", "setuptools_scm"]
 build-backend = 'setuptools.build_meta'
 
+[tool.black]
+line-length = 120
+target-version = ["py36", "py37", "py38", "py39"]
+extend-exclude = """
+/(
+   | .cache
+   | .env_cache
+   | .direnv
+)/
+"""
+
 [tool.flakehell]
 max_line_length = 120
 exclude = [
@@ -18,10 +29,6 @@ filename = [
 ]
 count = true
 show_source = true
-# Configure flake8-quotes to prefer double quotes
-inline-quotes = "'"
-multiline-quotes = "'''"
-docstring-quotes = "'''"
 
 [tool.flakehell.plugins]
 ## Style Related ignores
@@ -112,7 +119,7 @@ flake8-bugbear = [
 ## These help with refactor cleanness
 flake8-commas = [
   # missing trailing comma
-  "+C812",
+  # "+C812",
   # missing trailing comma in Python 3.6+
   "+C816",
 ### This catches implicit (by mistake) tuples
@@ -163,23 +170,12 @@ flake8-mutable = [
   # mutable default arg of type
   "+M511",
 ]
-## Standardize on quotes
-flake8-quotes = [
-  # Remove bad quotes
-  "+Q000",
-  # Remove bad quotes from multiline string
-  "+Q001",
-  # Remove bad quotes from docstring
-  "+Q002",
-  # Change outer quotes to avoid escaping inner quotes
-  "+Q003",
-]
 ## More refactor freindlyness
 flake8-strict = [
   # First argument on the same line
   "+S100",
   # Multi-line construct missing trailing comma
-  "+S101",
+  # "+S101",
 ]
 
 [tool.isort]
