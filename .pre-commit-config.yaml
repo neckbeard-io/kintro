@@ -4,10 +4,16 @@ repos:
     hooks:
       - id: pyupgrade
         args: ["--py36-plus"]
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        name: isort (python)
   - repo: https://github.com/psf/black
     rev: 21.12b0
     hooks:
       - id: black
+        language_version: python3.6
 # Temp until https://github.com/flakehell/flakehell/pull/23 merged
   - repo: https://github.com/mcarans/flakehell
     rev: 1b84f4dd6c16232b5c0c6206511427676ab55f5b
