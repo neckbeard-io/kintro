@@ -300,7 +300,7 @@ def handle_episode(
                 start = marker.start / 1000
                 end = marker.end / 1000
                 # build the content for the file
-                intro_entry = "%s %s %s" % (start, end, edit.value)
+                intro_entry = f"{start} {end} {edit.value}"
                 # plex can expose multiple locations for a video/episode, so we should
                 # iterate through them and write an .edl file for each
                 for location in episode.locations:

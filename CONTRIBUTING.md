@@ -3,8 +3,8 @@ TODO
 
 ### Docker development
 #### version + base
-Choose a python version (ex: 3.6.15) 
-Choose a python container base (ex: alpine3.15) 
+Choose a python version (ex: 3.6.15)
+Choose a python container base (ex: alpine3.15)
 
 ```bash
 pushd docker
