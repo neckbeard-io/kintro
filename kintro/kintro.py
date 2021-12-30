@@ -1,8 +1,12 @@
-from kintro.connect import account, server
+import logging
+
+from kintro.connect import (
+    account,
+    server,
+)
 from kintro.utils import _init_logger
 
 import click
-import logging
 
 
 @click.group()
