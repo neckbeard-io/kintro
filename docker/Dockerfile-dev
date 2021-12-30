@@ -1,0 +1,46 @@
+ARG PYTHON_VERSION
+ARG PYTHON_BASE
+ARG PYTHON_IMAGE=python:${PYTHON_VERSION}-${PYTHON_BASE}
+FROM ${PYTHON_IMAGE}
+
+ENV PYTHON_VERSION=${PYTHON_VERSION}
+
+# SLOWISH
+RUN apk add gcc \
+            python3-dev \
+            musl-dev \
+            g++ \
+	    git \
+	    jq \
+	    bash \
+	    direnv \
+	    sudo \
+	    shadow \
+	    su-exec \
+	    procps \
+	    tzdata \
+	    coreutils \
+	    ca-certificates
+
+RUN groupmod -g 1000 users \
+        && useradd -u 1000 -U -s /bin/bash -G users,wheel kintro \
+	&& echo "kintro ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/kintro && chmod 0440 /etc/sudoers.d/kintro \
+	&& mkdir -p /home/kintro \
+	&& chown -R kintro.kintro /home/kintro
+
+RUN pip install virtualenv virtualenvwrapper pip-tools pre-commit
+
+USER kintro
+
+ENV SHELL=/bin/bash
+ENV PATH=/home/kintro/.local/bin:${PATH}
+
+COPY bashrc /home/kintro/.bashrc
+COPY direnv.toml /home/kintro/.config/direnv/direnv.toml
+
+VOLUME ["/data"]
+VOLUME ["/kintro"]
+
+WORKDIR /kintro
+
+ENTRYPOINT /bin/bash

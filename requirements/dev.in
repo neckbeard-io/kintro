@@ -1,0 +1,7 @@
+-r runtime.in
+-r style.in
+-r typing.in
+black<=21.10b0
+pip-tools
+pre-commit
+tox
