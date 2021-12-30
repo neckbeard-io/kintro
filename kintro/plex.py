@@ -33,16 +33,18 @@ class LibType(enum.Enum):
     type=click.Choice(['cut', 'mute', 'scene', 'commercial']),
     default='scene',
     #TODO: convert all this help stuff to docstring format
-    help='cut: Makes it so the intro is completely gone ' \
-         'mute: Makes it so the intro\'s audio is muted ' \
-         'scene: Makes it so the nextscene action skips to the end of the intro ' \
-         'commercial: Makes it so the intro is skipped once (like cut), but is then seekable after'
+    help=(
+        'cut: Makes it so the intro is completely gone '
+        "mute: Makes it so the intro's audio is muted "
+        'scene: Makes it so the nextscene action skips to the end of the intro '
+        'commercial: Makes it so the intro is skipped once (like cut), but is then seekable after'
+    ),
 )
 @click.option(
     '--dry-run',
     default=False,
     is_flag=True,
-    help='Logs the .edl files kintro will write without writing them'
+    help='Logs the .edl files kintro will write without writing them',
 )
 @click.option(
     '--libtype',
@@ -54,8 +56,10 @@ class LibType(enum.Enum):
 @optgroup.group(
     'Find and Replace',
     cls=AllOptionGroup,
-    help='Find and Replace options for fixing file paths '
-         '(useful for plex servers running in containers)'
+    help=(
+        'Find and Replace options for fixing file paths '
+        '(useful for plex servers running in containers)'
+    ),
 )
 @optgroup.option('--find-path', help='Find string')
 @optgroup.option('--replace-path', type=click.Path(exists=True), help='Replace directory')
@@ -73,7 +77,14 @@ def sync(ctx, library, edit, dry_run, libtype, filter_json, find_path, replace_p
     tv = {
         LibType.Episode: lambda: plex.library.section(library).search(libtype='episode', **more_search),
         LibType.Show: lambda: itertools.chain(
-            *(show.episodes() for show in plex.library.section(library).search(libtype='show', **more_search))),
+            *(
+                show.episodes()
+                for show in plex.library.section(library).search(
+                    libtype='show',
+                    **more_search,
+                )
+            ),
+        ),
     }[libtype]()
 
     if max_workers == 1:
@@ -219,8 +230,12 @@ def handle_episode(
 
     ctx.obj['logger'].debug(
         'Checking for intro marker show="%s" season=%s episode=%s title="%s"' %
-        (episode.grandparentTitle, episode.seasonNumber, episode.episodeNumber,
-         episode.title)
+        (
+            episode.grandparentTitle,
+            episode.seasonNumber,
+            episode.episodeNumber,
+            episode.title,
+        ),
     )
     # This call is EXTREMELY expensive, do not prefilter on it (this lets threads bear the weight)
     if episode.hasIntroMarker:
@@ -247,8 +262,16 @@ def handle_episode(
 
                     ctx.obj['logger'].info(
                         'show="%s" season=%s episode=%s title="%s" location="%s start=%s end=%s file="%s"' %
-                        (episode.grandparentTitle, episode.seasonNumber, episode.episodeNumber,
-                         episode.title, episode.locations, start, end, file_path)
+                        (
+                            episode.grandparentTitle,
+                            episode.seasonNumber,
+                            episode.episodeNumber,
+                            episode.title,
+                            episode.locations,
+                            start,
+                            end,
+                            file_path,
+                        ),
                     )
 
     return files_to_modify
