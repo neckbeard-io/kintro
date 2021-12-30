@@ -3,24 +3,45 @@
 ###### https://stackabuse.com/managing-python-environments-with-direnv-and-pyenv/
 ###### https://ideas.offby1.net/posts/direnv-and-pip-tools-together.html
 #### See for dependencies https://github.com/pyenv/pyenv/wiki#suggested-build-environment
+```bash
 curl -L https://pyenv.run | bash
+```
 
 #### Assuming ubuntu
+```bash
 sudo apt-get install direnv
+```
+
+#### Setup the configs
+```bash
 mkdir -p ~/.config/direnv
 cp docker/direnvrc ~/.config/direnv/direnvrc
+```
+
+#### Optionally whitelist kintro for direnv
+```bash
+cat <<EOF > ~/.config/direnv/direnv.toml
+[whitelist]
+prefix = [ "FULL_PATH_TO_KINTRO_REPO" ]
+EOF
+```
+
 
 #### Assuming bash
+```bash
 echo 'export PATH="~/.pyenv/bin:$PATH"' >> ~/.bashrc
 echo 'export PATH="~/.local/bin:$PATH"' >> ~/.bashrc
 echo 'eval "$(direnv hook zsh)"' >> ~/.bashrc
 echo 'eval "$(pyenv init -)"' >> ~/.bashrc
 echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.bashrc
 source ~/.bashrc
+```
 
 #### Replace with whatever version you want
+```bash
 export PYTHON_VERSION=3.6.15
 direnv allow
+```
 
 ### Docker development
 #### version + base
@@ -43,7 +64,7 @@ popd
 ```
 
 #### Run your container (default command is bash into the code directory you mounted in
-```
+```bash
 mkdir -p .env_cache .cache
 docker run \
         --rm \
