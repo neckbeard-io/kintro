@@ -1,0 +1,4 @@
+click
+click_option_group
+more_itertools>=7.1.0
+plexapi
