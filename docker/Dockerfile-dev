@@ -41,6 +41,9 @@ COPY direnv.toml /home/kintro/.config/direnv/direnv.toml
 
 VOLUME ["/data"]
 VOLUME ["/kintro"]
+VOLUME ["/home/kintro/.ssh"]
+VOLUME ["/home/kintro/.envs"]
+VOLUME ["/home/kintro/.cache"]
 
 WORKDIR /kintro
 

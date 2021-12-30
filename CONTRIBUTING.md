@@ -22,4 +22,7 @@ popd
 ```
 
 #### Run your container (default command is bash into the code directory you mounted in
-`docker run --rm -it -v $(pwd):/kintro -v PATH_TO_DATA_DIR:/data --user $(id -u):$(id -g) kintro-dev`
+```
+mkdir -p .env_cache .cache
+docker run --rm -it -v $(pwd):/kintro -v PATH_TO_SSH_FOLDER:/home/kintro/.ssh:ro -v .env_cache:/home/kintro/.envs -v .cache:/home/kintro/.cache -v PATH_TO_DATA_DIR:/data --user $(id -u):$(id -g) kintro-dev
+```
