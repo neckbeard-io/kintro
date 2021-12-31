@@ -60,7 +60,7 @@ class LibType(enum.Enum):
 @optgroup.group(
     "Find and Replace",
     cls=AllOptionGroup,
-    help=("Find and Replace options for fixing file paths (useful for plex servers running in containers)"),
+    help="Find and Replace options for fixing file paths (useful for plex servers running in containers)",
 )
 @optgroup.option("--find-path", help="Find string")
 @optgroup.option("--replace-path", type=click.Path(exists=True), help="Replace directory")
@@ -250,13 +250,8 @@ def handle_episode(
     files_to_modify = []
 
     ctx.obj["logger"].debug(
-        'Checking for intro marker show="%s" season=%s episode=%s title="%s"'
-        % (
-            episode.grandparentTitle,
-            episode.seasonNumber,
-            episode.episodeNumber,
-            episode.title,
-        ),
+        f'Checking for intro marker show="{episode.grandparentTitle}"'
+        f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"',
     )
     # This call is EXTREMELY expensive, do not prefilter on it (this lets threads bear the weight)
     if episode.hasIntroMarker:
@@ -282,17 +277,9 @@ def handle_episode(
                     files_to_modify.append(file_path)
 
                     ctx.obj["logger"].info(
-                        'show="%s" season=%s episode=%s title="%s" location="%s start=%s end=%s file="%s"'
-                        % (
-                            episode.grandparentTitle,
-                            episode.seasonNumber,
-                            episode.episodeNumber,
-                            episode.title,
-                            episode.locations,
-                            start,
-                            end,
-                            file_path,
-                        ),
+                        f'show="{episode.grandparentTitle}"'
+                        f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"'
+                        f' location="{episode.locations} start={start} end={end} file="{file_path}"',
                     )
 
     return files_to_modify
