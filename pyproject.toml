@@ -12,6 +12,7 @@ extend-exclude = """
    | .direnv
 )/
 """
+experimental-string-processing = true
 
 [tool.flakehell]
 max_line_length = 120

@@ -15,7 +15,7 @@ repos:
       - id: flynt
         language: python
         types: [python]
-        args: [--line-length, '120', --aggressive, --fail-on-change]
+        args: [--line-length, '999', --aggressive, --fail-on-change]
   - repo: https://github.com/psf/black
     rev: 21.12b0
     hooks:
