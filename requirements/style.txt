@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=requirements/style.txt requirements/style.in
 #
+astor==0.8.1
+    # via flynt
 attrs==20.3.0
     # via
     #   flake8-bugbear
@@ -59,6 +61,8 @@ flake8-quotes==3.3.1
 flake8-strict==0.2.1
     # via -r requirements/style.in
 flakehell @ git+git://github.com/mcarans/flakehell.git
+    # via -r requirements/style.in
+flynt==0.69
     # via -r requirements/style.in
 importlib-metadata==4.2.0
     # via
