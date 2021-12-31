@@ -22,12 +22,16 @@ function use_pip-tools() {
         pip install pip-tools
     fi
 
-    requirements_txt=$(echo "$requirements_file" | cut -f 1 -d '.').txt
-    if [ $requirements_file -nt $requirements_txt ]; then
+    deps=$(python docker/direnvrc_helpers.py $requirements_file)
+    ret_val=$?
+
+    if [ $ret_val -eq 1 ]; then
         echo "[use pip-tools] resyncing requirements"
         pip-compile "$@" $requirements_file
     fi
+    requirements_txt=$(echo "$requirements_file" | cut -f 1 -d '.').txt
     pip-sync $requirements_txt
 
-    watch_file $requirements_file
+    echo "[use pip-tools] monitoring $deps"
+    watch_file $deps
 }
