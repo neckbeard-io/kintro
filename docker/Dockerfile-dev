@@ -1,0 +1,61 @@
+ARG PYTHON_VERSION
+ARG PYTHON_BASE
+ARG PYTHON_IMAGE=python:${PYTHON_VERSION}-${PYTHON_BASE}
+FROM ${PYTHON_IMAGE}
+
+ENV PYTHON_VERSION=${PYTHON_VERSION}
+
+# SLOWISH
+RUN apk add \
+	    bash \
+	    build-base \
+	    bzip2-dev \
+	    ca-certificates \
+	    coreutils \
+	    curl \
+	    direnv \
+	    gcc \
+	    git \
+            g++ \
+	    jq \
+	    libffi-dev \
+	    linux-headers \
+            musl-dev \
+	    openssh \
+	    openssl-dev \
+	    procps \
+            python3-dev \
+	    readline-dev \
+	    shadow \
+            sqlite-dev  \
+	    su-exec \
+	    sudo \
+	    tzdata \
+	    zlib-dev
+
+RUN groupmod -g 1000 users \
+        && useradd -u 1000 -U -s /bin/bash -G users,wheel kintro \
+	&& echo "kintro ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/kintro && chmod 0440 /etc/sudoers.d/kintro \
+	&& mkdir -p /home/kintro \
+	&& chown -R kintro.kintro /home/kintro
+
+USER kintro
+
+RUN curl -L https://pyenv.run | bash
+
+ENV SHELL=/bin/bash
+ENV PATH=/home/kintro/.local/bin:/home/kintro/.pyenv/bin:${PATH}
+
+COPY bashrc /home/kintro/.bashrc
+COPY direnv.toml /home/kintro/.config/direnv/direnv.toml
+COPY direnvrc /home/kintro/.config/direnv/direnvrc
+
+VOLUME ["/data"]
+VOLUME ["/kintro"]
+VOLUME ["/home/kintro/.ssh"]
+VOLUME ["/home/kintro/.envs"]
+VOLUME ["/home/kintro/.cache"]
+
+WORKDIR /kintro
+
+ENTRYPOINT /bin/bash

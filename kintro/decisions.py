@@ -1,5 +1,6 @@
 import enum
 
+
 @enum.unique
 class DECISION_TYPES(enum.Enum):
     cut = 0

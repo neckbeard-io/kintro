@@ -1,3 +1,10 @@
+# container dev stuff
+.env_cache
+.cache
+
+# Dir env stuff
+.direnv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
