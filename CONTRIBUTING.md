@@ -1,3 +1,25 @@
+### Development summary (+suggestions)
+You will need [pre-commit](https://pypi.org/project/pre-commit/) installed.
+
+You will need a python environment (3.6 <= VERSION <= 3.10)
+
+You will need pip installed
+
+```
+pip-compile requirements/dev.in -o requirements/dev.txt
+pip install -r requirements/dev.txt
+
+pre-commit install --hook-type pre-commit --hook-type pre-push
+```
+
+When making changes to any of the `requirements/*.in` files, you may run `pip-compile requirements/dev.in -o requirements/dev.txt` to recompile them (pre-commit will also do this pre-push, then give you a chance to review / add them to your commits)
+
+#### Suggestion
+use [conventional-commit](https://www.conventionalcommits.org/en/v1.0.0/) style
+
+[gitcommit](https://www.conventionalcommits.org/en/v1.0.0/) provides a `gitcommit` cli that is quite decent.
+
+
 ### Virtualenv development (with pyenv and direnv)
 ##### Sources
 ###### https://stackabuse.com/managing-python-environments-with-direnv-and-pyenv/
@@ -46,6 +68,7 @@ direnv allow
 ### Docker development
 #### version + base
 Choose a python version (ex: 3.6.15)
+
 Choose a python container base (ex: alpine3.15)
 
 ```bash
