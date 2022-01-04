@@ -13,6 +13,9 @@ requirements/.last_python_version
 # pyenv stuff
 .python-version
 
+# pycharm stuff
+.idea
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
