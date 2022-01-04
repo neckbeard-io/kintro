@@ -20,7 +20,7 @@ jobs:
     - name: Install build dependencies
       run: |
         pip install --upgrade pip
-        pip install pip-compile
+        pip install pip-tools
     - name: Compile dev dependencies and install
       run: |
         pip-compile requirements/dev.in -o requirements/dev.txt
