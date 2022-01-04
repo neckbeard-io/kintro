@@ -26,29 +26,6 @@ repos:
     rev: 1b84f4dd6c16232b5c0c6206511427676ab55f5b
     hooks:
       - id: flakehell
-  - repo: https://github.com/jazzband/pip-tools
-    rev: 6.4.0
-    hooks:
-      - id: pip-compile
-        name: pip-compile requirements/dev.in
-        args: [requirements/dev.in, -o, requirements/dev.txt]
-        files: ^requirements[/]dev\.in$
-        stages: [push]
-      - id: pip-compile
-        name: pip-compile requirements/runtime.in
-        args: [requirements/runtime.in, -o, requirements/runtime.txt]
-        files: ^requirements[/]runtime\.in$
-        stages: [push]
-      - id: pip-compile
-        name: pip-compile requirements/style.in
-        args: [requirements/style.in, -o, requirements/style.txt]
-        files: ^requirements[/]style\.in$
-        stages: [push]
-      - id: pip-compile
-        name: pip-compile requirements/typing.in
-        args: [requirements/typing.in, -o, requirements/typing.txt]
-        files: ^requirements[/]typing\.in$
-        stages: [push]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
     hooks:

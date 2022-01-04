@@ -1,9 +1,11 @@
 ### Development summary (+suggestions)
-You will need [pre-commit](https://pypi.org/project/pre-commit/) installed.
-
 You will need a python environment (3.6 <= VERSION <= 3.10)
 
 You will need pip installed
+
+You will need [pre-commit](https://pypi.org/project/pre-commit/) `pip install pre-commit` installed.
+
+You will need pip-tools `pip install pip-tools` installed.
 
 ```
 pip-compile requirements/dev.in -o requirements/dev.txt
@@ -12,7 +14,9 @@ pip install -r requirements/dev.txt
 pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
-When making changes to any of the `requirements/*.in` files, you may run `pip-compile requirements/dev.in -o requirements/dev.txt` to recompile them (pre-commit will also do this pre-push, then give you a chance to review / add them to your commits)
+When making changes to any of the `requirements/*.in` files, you may run `pip-compile requirements/dev.in -o requirements/dev.txt` (or substitute `dev` for any of the other files) to recompile them. After doing so running `pip-sync requirements/dev.txt` (or substitute `dev` for any of the other files) will sync your environment with pip.
+
+Additionally running `tox` should use your current version of python and attempt to run the above and any other tests / validation
 
 #### Suggestion
 use [conventional-commit](https://www.conventionalcommits.org/en/v1.0.0/) style
@@ -46,6 +50,8 @@ cat <<EOF > ~/.config/direnv/direnv.toml
 [whitelist]
 prefix = [ "FULL_PATH_TO_KINTRO_REPO" ]
 EOF
+# For older version compatibility
+cp ~/.config/direnv/direnv.toml ~/.config/direnv/config.toml
 ```
 
 
@@ -62,8 +68,18 @@ source ~/.bashrc
 #### Replace with whatever version you want
 ```bash
 export PYTHON_VERSION=3.6.15
-direnv allow
+direnv allow # if you have not whitelisted the path
+direnv reload
 ```
+
+##### Change python version (annoyingly required a reload)
+```bash
+export PYTHON_VERSION=3.9.9
+direnv allow # if you have not whitelisted the path
+direnv reload
+```
+
+##### Note in this version we install python (3.6.15 3.7.12 3.8.12 3.9.9 3.10.1) by default with pyenv
 
 ### Docker development
 #### version + base
