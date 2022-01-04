@@ -30,6 +30,7 @@ function use_pip-tools() {
     LAST_PYTHON_VERSION=$(head -n 1 .last_python_version)
     LAST_PYTHON_VERSION=${LAST_PYTHON_VERSION:-0.0.0}
 
+    echo "[use pip-tools] Python wanted: ${PYTHON_VERSION} , Python last: ${LAST_PYTHON_VERSION}"
     requirements_txt=$(echo "$requirements_file" | cut -f 1 -d '.').txt
     if [ $ret_val -eq 1 ] || [[ "$PYTHON_VERSION" != "$LAST_PYTHON_VERSION" ]]; then
         find $requirements_dir -name '*.txt' -type f -delete
