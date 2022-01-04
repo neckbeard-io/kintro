@@ -1,6 +1,8 @@
 function use_pip-tools() {
     requirements_file=${1:?"a requirements file must be provided as the first argument"}
     shift
+    requirements_dir=$(dirname $requirements_file)
+
     local has_pip=0
     if has pip; then
         if [[ $(which pip) = $PWD/* ]]; then
@@ -25,8 +27,12 @@ function use_pip-tools() {
     deps=$(python docker/direnvrc_helpers.py $requirements_file)
     ret_val=$?
 
+    LAST_PYTHON_VERSION=$(head -n 1 .last_python_version)
+    LAST_PYTHON_VERSION=${LAST_PYTHON_VERSION:-0.0.0}
+
     requirements_txt=$(echo "$requirements_file" | cut -f 1 -d '.').txt
-    if [ $ret_val -eq 1 ]; then
+    if [ $ret_val -eq 1 ] || [[ "$PYTHON_VERSION" != "$LAST_PYTHON_VERSION" ]]; then
+        find $requirements_dir -name '*.txt' -type f -delete
         echo "[use pip-tools] resyncing main requirements ($requirements_file)"
         pip-compile "$@" $requirements_file -o $requirements_txt
         echo "[use pip-tools] resyncing dependencies ($deps)"
@@ -35,6 +41,7 @@ function use_pip-tools() {
             other_requirements_txt=$(echo "$other_requirements_file" | cut -f 1 -d '.').txt
             pip-compile "$@" $other_requirements_file -o $other_requirements_txt
         done
+	echo $PYTHON_VERSION > .last_python_version
     fi
     pip-sync $requirements_txt
 

@@ -1,5 +1,6 @@
 # pip-compile stuff
 requirements/*.txt
+requirements/.last_python_version
 
 # container dev stuff
 .env_cache
