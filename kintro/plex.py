@@ -234,7 +234,9 @@ def handle_episodes(
             )
             time.sleep(1)
         except Exception as e:
-            ctx.obj["logger"].warning(f"Exception {e} in {threading.current_thread().name} continuing")
+            ctx.obj["logger"].warning(
+                f"Exception {e} in {threading.current_thread().name} while handling batch of episodes, continuing..."
+            )
             continue
     return None
 
@@ -253,33 +255,38 @@ def handle_episode(
         f'Checking for intro marker show="{episode.grandparentTitle}"'
         f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"',
     )
-    # This call is EXTREMELY expensive, do not prefilter on it (this lets threads bear the weight)
-    if episode.hasIntroMarker:
-        # multiple markers can exist for a file. only want type intro,
-        # but it's possible there could be more than one intro
-        for marker in episode.markers:
-            if marker.type == "intro":
-                start = marker.start / 1000
-                end = marker.end / 1000
-                # build the content for the file
-                intro_entry = f"{start} {end} {edit.value}"
-                # plex can expose multiple locations for a video/episode, so we should
-                # iterate through them and write an .edl file for each
-                for location in episode.locations:
-                    file_path = os.path.splitext(location)[0] + ".edl"
-                    # if we're running in a container or otherwise need to fix the path
-                    if find_path:
-                        file_path = file_path.replace(find_path, replace_path)
-                    if not dry_run:
-                        with open(file_path, "w") as writer:
-                            writer.write(intro_entry)
+    try:
+        # This call is EXTREMELY expensive, do not prefilter on it (this lets threads bear the weight)
+        if episode.hasIntroMarker:
+            # multiple markers can exist for a file. only want type intro,
+            # but it's possible there could be more than one intro
+            for marker in episode.markers:
+                if marker.type == "intro":
+                    start = marker.start / 1000
+                    end = marker.end / 1000
+                    # build the content for the file
+                    intro_entry = f"{start} {end} {edit.value}"
+                    # plex can expose multiple locations for a video/episode, so we should
+                    # iterate through them and write an .edl file for each
+                    for location in episode.locations:
+                        file_path = os.path.splitext(location)[0] + ".edl"
+                        # if we're running in a container or otherwise need to fix the path
+                        if find_path:
+                            file_path = file_path.replace(find_path, replace_path)
+                        if not dry_run:
+                            with open(file_path, "w") as writer:
+                                writer.write(intro_entry)
 
-                    files_to_modify.append(file_path)
+                        files_to_modify.append(file_path)
 
-                    ctx.obj["logger"].info(
-                        f'show="{episode.grandparentTitle}"'
-                        f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"'
-                        f' location="{episode.locations} start={start} end={end} file="{file_path}"',
-                    )
+                        ctx.obj["logger"].info(
+                            f'show="{episode.grandparentTitle}"'
+                            f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"'
+                            f' location="{episode.locations} start={start} end={end} file="{file_path}"',
+                        )
+    except Exception as e:
+        ctx.obj["logger"].warning(
+            f"Exception {e} in {threading.current_thread().name} while handling and episode, continuing..."
+        )
 
     return files_to_modify
