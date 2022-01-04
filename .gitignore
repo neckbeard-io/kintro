@@ -1,9 +1,16 @@
+# pip-compile stuff
+requirements/*.txt
+requirements/.last_python_version
+
 # container dev stuff
 .env_cache
 .cache
 
 # Dir env stuff
 .direnv
+
+# pyenv stuff
+.python-version
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

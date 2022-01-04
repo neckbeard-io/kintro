@@ -1,0 +1,32 @@
+name: Python package
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: [pip]
+    - name: Install build dependencies
+      run: |
+        pip install --upgrade pip
+        pip install pip-compile
+    - name: Compile dev dependencies and install
+      run: |
+        pip-compile requirements/dev.in -o requirements/dev.txt
+        pip install -r requirements/dev.txt
+    - name: Run pre-commit verify
+      run: pre-commit run --all-files --show-diff-on-failure
+    - name: Run tox
+      run: tox

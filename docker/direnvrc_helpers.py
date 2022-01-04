@@ -17,7 +17,7 @@ def main(args):
     results = [(dep, is_mtime_newer(dep)) for dep in all_deps]
 
     if any(r[1] for r in results):
-        print(" ".join(r[0] for r in results))
+        print(" ".join({r[0] for r in results}))
         sys.exit(1)
     sys.exit(0)
 
@@ -35,7 +35,7 @@ def resolve_dependencies(requirements_base_path, requirements_file):
 
 def is_mtime_newer(filename):
     txt_filename = os.path.splitext(filename)[0] + ".txt"
-    return os.path.getmtime(filename) > os.path.getmtime(txt_filename)
+    return os.path.getmtime(filename) > os.path.getmtime(txt_filename) if os.path.exists(txt_filename) else True
 
 
 if __name__ == "__main__":
