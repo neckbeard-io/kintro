@@ -5,7 +5,7 @@ function use_pip-tools() {
 
     local has_pip=0
     if has pip; then
-        if [[ $(which pip) = $PWD/* ]]; then
+        if [[ -n $(which pip) ]]; then
             has_pip=1
         fi
     fi
@@ -37,15 +37,42 @@ function use_pip-tools() {
         echo "[use pip-tools] resyncing main requirements ($requirements_file)"
         pip-compile "$@" $requirements_file -o $requirements_txt
         echo "[use pip-tools] resyncing dependencies ($deps)"
-	for other_requirements_file in $(grep -v $requirements_file <<< $(tr ' ' '\n' <<< $deps)); do
+        for other_requirements_file in $(grep -v $requirements_file <<< $(tr ' ' '\n' <<< $deps)); do
             echo "[use pip-tools] resyncing dependency ($other_requirements_file)"
             other_requirements_txt=$(echo "$other_requirements_file" | cut -f 1 -d '.').txt
             pip-compile "$@" $other_requirements_file -o $other_requirements_txt
         done
-	echo $PYTHON_VERSION > .last_python_version
+        echo $PYTHON_VERSION > .last_python_version
     fi
+    echo "[use pip-tools] Resyncing $requirements_txt"
     pip-sync $requirements_txt
 
     echo "[use pip-tools] monitoring $deps"
     watch_file $deps
+}
+
+# use a certain pyenv version
+use_python() {
+    if [ -n "$(which pyenv)" ]; then
+        local pyversion=$1
+        echo "[use python] pyenv ${pyversion}"
+        pyenv local ${pyversion}
+    fi
+}
+
+layout_virtualenv() {
+    local pyversion=$1
+    local pvenv=$2
+    if [ -n "$(which pyenv virtualenv)" ]; then
+        echo "[layout virtualenv] pyenv virtual env $pvenv ${pyversion}"
+        pyenv virtualenv --force --quiet ${pyversion} ${pvenv}-${pyversion}
+    fi
+    pyenv local --unset
+}
+
+layout_activate() {
+    if [ -n "$(which pyenv)" ]; then
+        echo "[layout activate] pyenv $1"
+        source $(pyenv root)/versions/$1/bin/activate
+    fi
 }

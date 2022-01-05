@@ -117,3 +117,15 @@ docker run \
         --user $(id -u):$(id -g) \
         kintro-dev
 ```
+
+### PyCharm development
+
+#### Needs PyCharm Professional edition (for ssh remote dev feature)
+Setup project as remote ssh into the remote project directory
+
+In a terminal (pycharm or not) create the virtual environments you want and pip-compile | install requirements txt
+
+##### Add interpreters (under Project...remote...)
+Virtualenv environment > Existing environment > select an appropriate one or 2 intepreters
+
+Add `requirements/dev.txt` to Tools > Python Integrated Tools > Package requirements file
