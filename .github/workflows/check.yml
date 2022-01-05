@@ -24,7 +24,9 @@ jobs:
         pip install pip-tools
     - name: Compile dev dependencies and install
       run: |
-        pip-compile requirements/dev.in -o requirements/dev.txt
+        for requirements_file in $(ls -1 requirements/*.in); do
+            pip-compile ${requirements_file} -o $(echo "$requirements_file" | cut -f 1 -d '.').txt
+        done
         pip install -r requirements/dev.txt
     - name: Run pre-commit verify
       run: pre-commit run --all-files --show-diff-on-failure

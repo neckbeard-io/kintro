@@ -203,6 +203,9 @@ use_parentheses = true
 skip_gitignore = true
 
 [tool.mypy]
-python_version = 3.6
 exclude = ".git|build|__pycache__|.direnv|.cache|.env_cache|.envrc|setup.py"
 show_error_codes = true
+mypy_path = "type_stubs"
+strict = true
+strict_optional = true
+no_implicit_optional = true

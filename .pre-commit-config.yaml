@@ -1,3 +1,5 @@
+ci:
+    skip: [mypy]
 default_language_version:
     python: python3
 repos:
@@ -25,6 +27,7 @@ repos:
     hooks:
       - id: isort
         name: isort (python)
+        types: [python]
   - repo: https://github.com/ikamensh/flynt/
     rev: '0.69'
     hooks:
@@ -41,6 +44,23 @@ repos:
     rev: 1b84f4dd6c16232b5c0c6206511427676ab55f5b
     hooks:
       - id: flakehell
+  - repo: local
+    # We do not use pre-commit/mirrors-mypy,
+    # as it comes with opinionated defaults
+    # (like --ignore-missing-imports)
+    # and is difficult to configure to run
+    # with the dependencies correctly installed.
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: "bash ./build-scripts/run-mypy"
+        language: system
+        types: [python]
+        # use require_serial so that script
+        # is only called once per commit
+        require_serial: true
+        # Print the number of files as a sanity-check
+        verbose: true
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
     hooks:
