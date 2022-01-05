@@ -1,0 +1,6 @@
+from typing import Optional
+
+class OptionGroup:
+    def __init__(self, name: Optional[str] = ..., *, hidden: bool = ..., help: Optional[str] = ...) -> None: ...
+
+class AllOptionGroup(OptionGroup): ...

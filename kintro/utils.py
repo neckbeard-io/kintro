@@ -2,7 +2,7 @@ import logging
 import sys
 
 
-def _init_logger(name, log_level):
+def _init_logger(name: str, log_level: int) -> logging.Logger:
 
     fmt = "%(asctime)s %(filename)-15s %(funcName)-20s %(levelname)-7s %(message)s"
 

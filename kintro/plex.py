@@ -9,14 +9,17 @@ import queue
 import threading
 import time
 from typing import (
+    Any,
     Deque,
+    Dict,
     List,
+    Optional,
 )
 
 from kintro.decisions import DECISION_TYPES
 
 import click
-from click_option_group import (  # type: ignore[import]
+from click_option_group import (
     AllOptionGroup,
     optgroup,
 )
@@ -68,25 +71,25 @@ class LibType(enum.Enum):
 @click.option("--worker-batch-size", default=10, help="Chunk of work to hand off to each worker")
 @click.pass_context
 def sync(
-    ctx,
-    library,
-    edit,
-    dry_run,
-    libtype,
-    filter_json,
-    find_path,
-    replace_path,
-    max_workers,
-    worker_batch_size,
-):
+    ctx: click.Context,
+    library: str,
+    edit: str,
+    dry_run: bool,
+    libtype: str,
+    filter_json: Optional[str],
+    find_path: Optional[str],
+    replace_path: Optional[str],
+    max_workers: int,
+    worker_batch_size: int,
+) -> None:
     ctx.obj["logger"].info("Starting sync process")
 
     plex = ctx.obj["plex"]
-    libtype = LibType(libtype.lower())
-    edit = DECISION_TYPES[edit]
+    libtype_val: LibType = LibType(libtype.lower())
+    edit_val = DECISION_TYPES[edit]
 
     more_search = {"filters": json.loads(filter_json)} if filter_json is not None else {}
-    tv = {
+    tv = {  # type: ignore[no-untyped-call]
         LibType.Episode: lambda: plex.library.section(library).search(libtype="episode", **more_search),
         LibType.Show: lambda: itertools.chain(
             *(
@@ -97,7 +100,7 @@ def sync(
                 )
             ),
         ),
-    }[libtype]()
+    }[libtype_val]()
 
     if max_workers == 1:
         for episode in (
@@ -108,7 +111,7 @@ def sync(
             handle_episode(
                 ctx=ctx,
                 episode=episode,
-                edit=edit,
+                edit=edit_val,
                 find_path=find_path,
                 replace_path=replace_path,
                 dry_run=dry_run,
@@ -118,17 +121,17 @@ def sync(
         tv_chunked = more_itertools.ichunked(tv, worker_batch_size)
 
         # Queues for interthread batches and results
-        batch_queue = collections.deque()
-        results = collections.deque()
+        batch_queue: Deque[List[Episode]] = collections.deque()
+        results: Deque[List[str]] = collections.deque()
         # Events controlling if processing threads are allowed to start or stop
         start_event = threading.Event()
         stop_event = threading.Event()
 
-        def submit():
+        def submit() -> None:
             ctx.obj["logger"].debug("Putting all episodes in batched queue")
             for episodes in tv_chunked:
                 ctx.obj["logger"].debug(f"Putting chunk of episodes in batched queue")
-                batch_queue.append(episodes)
+                batch_queue.append(list(episodes))
                 start_event.set()
                 time.sleep(0.01)
             start_event.set()
@@ -149,7 +152,7 @@ def sync(
         handle_eps = functools.partial(
             handle_episodes,
             ctx=ctx,
-            edit=edit,
+            edit=edit_val,
             find_path=find_path,
             replace_path=replace_path,
             dry_run=dry_run,
@@ -193,16 +196,16 @@ def sync(
 
 
 def handle_episodes(
-    ix,
+    ix: int,
     *,
     episodes_source: Deque[List[Episode]],
     results_sink: Deque[List[str]],
     start_event: threading.Event,
     stop_event: threading.Event,
-    ctx,
+    ctx: click.Context,
     edit: DECISION_TYPES,
-    find_path: str,
-    replace_path: str,
+    find_path: Optional[str],
+    replace_path: Optional[str],
     dry_run: bool,
 ) -> None:
     ctx.obj["logger"].info(f"Starting a episodes thread {threading.current_thread().name}")
@@ -242,11 +245,11 @@ def handle_episodes(
 
 
 def handle_episode(
-    ctx,
+    ctx: click.Context,
     episode: Episode,
     edit: DECISION_TYPES,
-    find_path: str,
-    replace_path: str,
+    find_path: Optional[str],
+    replace_path: Optional[str],
     dry_run: bool,
 ) -> List[str]:
     files_to_modify = []

@@ -18,9 +18,9 @@ import click
     help="Set the minimum log level",
 )
 @click.pass_context
-def cli(ctx, log_level):
+def cli(ctx: click.Context, log_level: str) -> None:
 
-    log_level = {
+    log_level_val = {
         "debug": logging.DEBUG,
         "info": logging.INFO,
         "warning": logging.WARNING,
@@ -28,8 +28,8 @@ def cli(ctx, log_level):
     }[log_level.lower()]
 
     ctx.obj = {}
-    ctx.obj["logger"] = _init_logger("kintro", log_level)
-    ctx.obj["debug"] = log_level == logging.DEBUG
+    ctx.obj["logger"] = _init_logger("kintro", log_level_val)
+    ctx.obj["debug"] = log_level_val == logging.DEBUG
 
 
 cli.add_command(account)
