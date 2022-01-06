@@ -5,10 +5,13 @@
 
 set -o errexit
 
-if ! [ -f requirements/typing.txt ]; then
-    echo "Installing pip-tools and generating requirements/typing.txt"
+if [[ ( (! -f requirements/typing.txt) || (requirements/typing.in -nt requirements/typing.txt) ) ]]  || \
+   [[ ( (! -f requirements/runtime.txt) || (requirements/runtime.in -nt requirements/runtime.txt) ) ]]
+then
+    echo "Installing pip-tools and generating (requirements/typing.txt and/or requirements/runtime.txt)"
     pip install pip-tools
     pip-compile requirements/typing.in -o requirements/typing.txt
+    pip-compile requirements/runtime.in -o requirements/runtime.txt
 fi
 
 echo "Installing typing and runtime deps"
