@@ -23,6 +23,7 @@ from click_option_group import (
     AllOptionGroup,
     optgroup,
 )
+import enlighten  # type: ignore[import]
 import more_itertools
 from plexapi.video import Episode  # type: ignore[import]
 
@@ -102,97 +103,102 @@ def sync(
         ),
     }[libtype_val]()
 
-    if max_workers == 1:
-        for episode in (
-            tv
-            if worker_batch_size == 1
-            else itertools.chain.from_iterable(more_itertools.ichunked(tv, worker_batch_size))
-        ):
-            handle_episode(
+    with enlighten.get_manager() as manager:
+        pbar = manager.counter(total=len(tv), desc="episodes:", unit="episodes", color="green")
+
+        if max_workers == 1:
+            for episode in (
+                tv
+                if worker_batch_size == 1
+                else itertools.chain.from_iterable(more_itertools.ichunked(tv, worker_batch_size))
+            ):
+                handle_episode(
+                    ctx=ctx,
+                    episode=episode,
+                    edit=edit_val,
+                    find_path=find_path,
+                    replace_path=replace_path,
+                    dry_run=dry_run,
+                    pbar=pbar,
+                )
+        else:
+            # Break the TV into yielding iterator chunks for batch processing
+            tv_chunked = more_itertools.ichunked(tv, worker_batch_size)
+
+            # Queues for interthread batches and results
+            batch_queue: Deque[List[Episode]] = collections.deque()
+            results: Deque[List[str]] = collections.deque()
+            # Events controlling if processing threads are allowed to start or stop
+            start_event = threading.Event()
+            stop_event = threading.Event()
+
+            def submit() -> None:
+                ctx.obj["logger"].debug("Putting all episodes in batched queue")
+                for episodes in tv_chunked:
+                    ctx.obj["logger"].debug(f"Putting chunk of episodes in batched queue")
+                    batch_queue.append(list(episodes))
+                    start_event.set()
+                    time.sleep(0.01)
+                start_event.set()
+                ctx.obj["logger"].debug("Sending stop event")
+                stop_event.set()
+
+            # Start the submitter in a background thread
+            ctx.obj["logger"].debug(f"Starting submitter background thread")
+            submitter = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+            submitter_res = submitter.submit(submit)
+
+            ctx.obj["logger"].debug(
+                f"Starting processing pool with max #{max_workers} workers and batch size {worker_batch_size}"
+            )
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
+
+            # Bind all the non varying args for the worker function
+            handle_eps = functools.partial(
+                handle_episodes,
                 ctx=ctx,
-                episode=episode,
                 edit=edit_val,
                 find_path=find_path,
                 replace_path=replace_path,
                 dry_run=dry_run,
+                episodes_source=batch_queue,
+                results_sink=results,
+                start_event=start_event,
+                stop_event=stop_event,
+                pbar=pbar,
             )
-    else:
-        # Break the TV into yielding iterator chunks for batch processing
-        tv_chunked = more_itertools.ichunked(tv, worker_batch_size)
 
-        # Queues for interthread batches and results
-        batch_queue: Deque[List[Episode]] = collections.deque()
-        results: Deque[List[str]] = collections.deque()
-        # Events controlling if processing threads are allowed to start or stop
-        start_event = threading.Event()
-        stop_event = threading.Event()
+            ctx.obj["logger"].debug(f"Starting worker fucntions on pool threads (#{max_workers})")
+            res = executor.map(
+                handle_eps,
+                [x for x in range(0, max_workers)],
+            )
 
-        def submit() -> None:
-            ctx.obj["logger"].debug("Putting all episodes in batched queue")
-            for episodes in tv_chunked:
-                ctx.obj["logger"].debug(f"Putting chunk of episodes in batched queue")
-                batch_queue.append(list(episodes))
-                start_event.set()
-                time.sleep(0.01)
-            start_event.set()
-            ctx.obj["logger"].debug("Sending stop event")
-            stop_event.set()
+            ctx.obj["logger"].debug("Requesting the submitter be destroyed")
+            submitter.shutdown()
+            ctx.obj["logger"].debug("Requesting the worker pool be destroyed")
+            executor.shutdown()
 
-        # Start the submitter in a background thread
-        ctx.obj["logger"].debug(f"Starting submitter background thread")
-        submitter = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        submitter_res = submitter.submit(submit)
-
-        ctx.obj["logger"].debug(
-            f"Starting processing pool with max #{max_workers} workers and batch size {worker_batch_size}"
-        )
-        executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
-
-        # Bind all the non varying args for the worker function
-        handle_eps = functools.partial(
-            handle_episodes,
-            ctx=ctx,
-            edit=edit_val,
-            find_path=find_path,
-            replace_path=replace_path,
-            dry_run=dry_run,
-            episodes_source=batch_queue,
-            results_sink=results,
-            start_event=start_event,
-            stop_event=stop_event,
-        )
-
-        ctx.obj["logger"].debug(f"Starting worker fucntions on pool threads (#{max_workers})")
-        res = executor.map(
-            handle_eps,
-            [x for x in range(0, max_workers)],
-        )
-
-        ctx.obj["logger"].debug("Requesting the submitter be destroyed")
-        submitter.shutdown()
-        ctx.obj["logger"].debug("Requesting the worker pool be destroyed")
-        executor.shutdown()
-
-        if ctx.obj["debug"]:
-            try:
-                for r in res:
-                    ctx.obj["logger"].debug(f"Worker thread launch result: {r}")
-            except Exception as e:
-                ctx.obj["logger"].exception(f"Error while checking worker thread status {e}")
-
-            try:
-                ctx.obj["logger"].debug(f"Submitter thread status {submitter_res.result()}")
-            except Exception as e:
-                ctx.obj["logger"].exception(f"Error while checking submitter thread status {e}")
-
-            while True:
-                ctx.obj["logger"].debug("Looping on results")
+            if ctx.obj["debug"]:
                 try:
-                    result = results.pop()
-                    if len(result) > 0:
-                        ctx.obj["logger"].debug(result)
-                except IndexError:
-                    break
+                    for r in res:
+                        ctx.obj["logger"].debug(f"Worker thread launch result: {r}")
+                except Exception as e:
+                    ctx.obj["logger"].exception(f"Error while checking worker thread status {e}")
+
+                try:
+                    ctx.obj["logger"].debug(f"Submitter thread status {submitter_res.result()}")
+                except Exception as e:
+                    ctx.obj["logger"].exception(f"Error while checking submitter thread status {e}")
+
+                while True:
+                    ctx.obj["logger"].debug("Looping on results")
+                    try:
+                        result = results.pop()
+                        if len(result) > 0:
+                            ctx.obj["logger"].debug(result)
+                    except IndexError:
+                        break
 
 
 def handle_episodes(
@@ -207,6 +213,7 @@ def handle_episodes(
     find_path: Optional[str],
     replace_path: Optional[str],
     dry_run: bool,
+    pbar: Any,
 ) -> None:
     ctx.obj["logger"].info(f"Starting a episodes thread {threading.current_thread().name}")
     ctx.obj["logger"].debug(f"Waiting for start event on thread {threading.current_thread().name}")
@@ -227,6 +234,7 @@ def handle_episodes(
                         find_path=find_path,
                         replace_path=replace_path,
                         dry_run=dry_run,
+                        pbar=pbar,
                     ),
                 )
         except IndexError as e:
@@ -251,6 +259,7 @@ def handle_episode(
     find_path: Optional[str],
     replace_path: Optional[str],
     dry_run: bool,
+    pbar: Any,
 ) -> List[str]:
     files_to_modify = []
 
@@ -287,9 +296,19 @@ def handle_episode(
                             f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"'
                             f' location="{episode.locations} start={start} end={end} file="{file_path}"',
                         )
+        # we should log when we don't find an intro
+        else:
+            ctx.obj["logger"].info(
+                f'show="{episode.grandparentTitle}"'
+                f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"'
+                f' location="{episode.locations} msg="No intro markers found"',
+            )
     except Exception as e:
         ctx.obj["logger"].warning(
             f"Exception {e} in {threading.current_thread().name} while handling and episode, continuing..."
         )
+    # always update the progress bar
+    finally:
+        pbar.update()
 
     return files_to_modify
