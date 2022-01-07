@@ -11,7 +11,7 @@ You will need pip-tools `pip install pip-tools` installed.
 pip-compile requirements/dev.in -o requirements/dev.txt
 pip install -r requirements/dev.txt
 
-pre-commit install --hook-type pre-commit --hook-type pre-push
+pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type commit-msg
 ```
 
 When making changes to any of the `requirements/*.in` files, you may run `pip-compile requirements/dev.in -o requirements/dev.txt` (or substitute `dev` for any of the other files) to recompile them. After doing so running `pip-sync requirements/dev.txt` (or substitute `dev` for any of the other files) will sync your environment with pip.
