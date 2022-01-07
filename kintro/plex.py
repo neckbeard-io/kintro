@@ -90,16 +90,18 @@ def sync(
     edit_val = DECISION_TYPES[edit]
 
     more_search = {"filters": json.loads(filter_json)} if filter_json is not None else {}
-    tv = {  # type: ignore[no-untyped-call]
+    tv: List[Episode] = {  # type: ignore[no-untyped-call]
         LibType.Episode: lambda: plex.library.section(library).search(libtype="episode", **more_search),
-        LibType.Show: lambda: itertools.chain(
-            *(
-                show.episodes()
-                for show in plex.library.section(library).search(
-                    libtype="show",
-                    **more_search,
-                )
-            ),
+        LibType.Show: lambda: list(
+            itertools.chain(
+                *(
+                    show.episodes()
+                    for show in plex.library.section(library).search(
+                        libtype="show",
+                        **more_search,
+                    )
+                ),
+            )
         ),
     }[libtype_val]()
 
