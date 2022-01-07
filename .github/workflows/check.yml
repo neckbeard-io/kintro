@@ -1,8 +1,15 @@
 name: Python package
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+    tags:
+      - "[0-9]+.[0-9]+.[0-0]+"
+      - "[0-9]+.[0-9]+.[0-0]+rc[0-9]+"
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
@@ -32,3 +39,36 @@ jobs:
       run: pre-commit run --all-files --show-diff-on-failure
     - name: Run tox
       run: tox
+
+  deploy:
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+
+    runs-on: ubuntu-latest
+
+    needs: [build]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.6"
+    - name: Install build dependencies
+      run: |
+        pip install --upgrade pip
+        pip install pip-tools
+    - name: Compile dev dependencies and install
+      run: |
+        for requirements_file in $(ls -1 requirements/*.in); do
+            pip-compile ${requirements_file} -o $(echo "$requirements_file" | cut -f 1 -d '.').txt
+        done
+        pip install -r requirements/dev.txt
+
+    - name: Build sdist and wheel
+      run: python setup.py sdist bdist_wheel
+
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.NECKBEARD_IO_PYPI }}
