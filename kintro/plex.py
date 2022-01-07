@@ -6,6 +6,7 @@ import itertools
 import json
 import os
 import queue
+import textwrap
 import threading
 import time
 from typing import (
@@ -32,6 +33,23 @@ from plexapi.video import Episode  # type: ignore[import]
 class LibType(enum.Enum):
     Episode = "episode"
     Show = "show"
+
+
+@enum.unique
+class Analyze(enum.Enum):
+    NoAnalyze = 0
+    AnalyzeIfIntroMissing = 1
+    ForceAnalyze = 2
+
+
+def to_analyze(ctx: click.Context, *, analyze_if_intro_missing: bool, force_analyze: bool) -> Analyze:
+    if force_analyze:
+        if analyze_if_intro_missing:
+            ctx.obj["logger"].warning("--force-analyze overrides --analyze-if-intro-missing")
+        return Analyze.ForceAnalyze
+    if analyze_if_intro_missing:
+        return Analyze.AnalyzeIfIntroMissing
+    return Analyze.NoAnalyze
 
 
 @click.command()
@@ -70,6 +88,28 @@ class LibType(enum.Enum):
 @optgroup.option("--replace-path", type=click.Path(exists=True), help="Replace directory")
 @click.option("--max-workers", default=4, help="Max Number of workers to process episodes")
 @click.option("--worker-batch-size", default=10, help="Chunk of work to hand off to each worker")
+@click.option(
+    "--analyze-if-intro-missing",
+    default=False,
+    is_flag=True,
+    help=textwrap.dedent(
+        """\
+        (Advanced) Perform analyze on episode if intro is missing (potentially expensive)
+            Take care with this flag and --max-workers or unfiltered libraries
+    """
+    ),
+)
+@click.option(
+    "--force-analyze",
+    default=False,
+    is_flag=True,
+    help=textwrap.dedent(
+        """\
+        (Advanced) Perform analyze on episode (Overrides --analyze-if-intro-missing) (potentially very expensive)
+            Take care with this flag and --max-workers or unfiltered libraries
+    """
+    ),
+)
 @click.pass_context
 def sync(
     ctx: click.Context,
@@ -82,12 +122,16 @@ def sync(
     replace_path: Optional[str],
     max_workers: int,
     worker_batch_size: int,
+    analyze_if_intro_missing: bool,
+    force_analyze: bool,
 ) -> None:
     ctx.obj["logger"].info("Starting sync process")
 
     plex = ctx.obj["plex"]
     libtype_val: LibType = LibType(libtype.lower())
     edit_val = DECISION_TYPES[edit]
+
+    should_analyze = to_analyze(ctx, analyze_if_intro_missing=analyze_if_intro_missing, force_analyze=force_analyze)
 
     more_search = {"filters": json.loads(filter_json)} if filter_json is not None else {}
     tv: List[Episode] = {  # type: ignore[no-untyped-call]
@@ -122,6 +166,7 @@ def sync(
                     replace_path=replace_path,
                     dry_run=dry_run,
                     pbar=pbar,
+                    should_analyze=should_analyze,
                 )
         else:
             # Break the TV into yielding iterator chunks for batch processing
@@ -168,6 +213,7 @@ def sync(
                 start_event=start_event,
                 stop_event=stop_event,
                 pbar=pbar,
+                should_analyze=should_analyze,
             )
 
             ctx.obj["logger"].debug(f"Starting worker fucntions on pool threads (#{max_workers})")
@@ -216,6 +262,7 @@ def handle_episodes(
     replace_path: Optional[str],
     dry_run: bool,
     pbar: Any,
+    should_analyze: Analyze,
 ) -> None:
     ctx.obj["logger"].info(f"Starting a episodes thread {threading.current_thread().name}")
     ctx.obj["logger"].debug(f"Waiting for start event on thread {threading.current_thread().name}")
@@ -237,6 +284,7 @@ def handle_episodes(
                         replace_path=replace_path,
                         dry_run=dry_run,
                         pbar=pbar,
+                        should_analyze=should_analyze,
                     ),
                 )
         except IndexError as e:
@@ -262,6 +310,7 @@ def handle_episode(
     replace_path: Optional[str],
     dry_run: bool,
     pbar: Any,
+    should_analyze: Analyze,
 ) -> List[str]:
     files_to_modify = []
 
@@ -269,7 +318,21 @@ def handle_episode(
         f'Checking for intro marker show="{episode.grandparentTitle}"'
         f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"',
     )
+
+    def may_analyze(cond: bool, message: str) -> None:
+        if cond:
+            ctx.obj["logger"].info(
+                f'{message}: show="{episode.grandparentTitle}"'
+                f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"'
+            )
+            episode.analyze()
+            episode.reload()
+
     try:
+        may_analyze(should_analyze == Analyze.ForceAnalyze, "Force analyzing")
+        may_analyze(
+            not episode.hasIntroMarker and should_analyze == Analyze.AnalyzeIfIntroMissing, "Missing intro, analyzing"
+        )
         # This call is EXTREMELY expensive, do not prefilter on it (this lets threads bear the weight)
         if episode.hasIntroMarker:
             # multiple markers can exist for a file. only want type intro,
