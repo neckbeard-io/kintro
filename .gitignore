@@ -15,6 +15,9 @@ requirements/.last_python_version
 
 # pycharm stuff
 .idea
+#
+# setuptools_scm stuff
+kintro/_version.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
