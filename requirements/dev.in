@@ -1,6 +1,7 @@
 -r runtime.in
 -r style.in
 -r typing.in
+commitizen
 pip-tools
 pre-commit
 setuptools-scm >= 6.3
