@@ -16,7 +16,7 @@ extend-exclude = """
 """
 experimental-string-processing = true
 
-[tool.flakehell]
+[tool.flakeheaven]
 max_line_length = 120
 exclude = [
   ".git",
@@ -33,7 +33,7 @@ filename = [
 count = true
 show_source = true
 
-[tool.flakehell.plugins]
+[tool.flakeheaven.plugins]
 ## Style Related ignores
 pycodestyle = [
   # E231: missing whitespace after ','
