@@ -44,11 +44,10 @@ repos:
     rev: 21.12b0
     hooks:
       - id: black
-# Temp until https://github.com/flakehell/flakehell/pull/23 merged
-  - repo: https://github.com/mcarans/flakehell
-    rev: 1b84f4dd6c16232b5c0c6206511427676ab55f5b
+  - repo: https://github.com/flakeheaven/flakeheaven
+    rev: 0.11.0
     hooks:
-      - id: flakehell
+      - id: flakeheaven
   - repo: local
     # We do not use pre-commit/mirrors-mypy,
     # as it comes with opinionated defaults
