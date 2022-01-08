@@ -1,8 +1,8 @@
 from kintro.plex import sync
 
 import click
-from plexapi.myplex import MyPlexAccount  # type: ignore[import]
-from plexapi.server import PlexServer  # type: ignore[import]
+from plexapi.myplex import MyPlexAccount
+from plexapi.server import PlexServer
 
 
 @click.group()
@@ -10,11 +10,11 @@ from plexapi.server import PlexServer  # type: ignore[import]
 @click.option("--password", required=True, prompt=True, hide_input=True, help="plex.tv password")
 @click.option("--server", required=True, help="Plex server to use")
 @click.pass_context
-def account(ctx: click.Context, user: str, password: str, server: str) -> None:
+def account(ctx: click.Context, user: str, password: str, server_loc: str) -> None:
 
     ctx.obj["logger"].info(f"Connecting to plex via account({user}) and password")
-    account = MyPlexAccount(user, password)
-    ctx.obj["plex"] = account.resource(server).connect()
+    account_ = MyPlexAccount(user, password)
+    ctx.obj["plex"] = account_.resource(server_loc).connect()
 
 
 @click.group()
