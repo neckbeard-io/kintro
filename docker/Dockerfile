@@ -1,12 +1,9 @@
 ARG PYTHON_VERSION
 ARG PYTHON_BASE
 ARG PYTHON_IMAGE=python:${PYTHON_VERSION}-${PYTHON_BASE}
-FROM ${PYTHON_IMAGE}
+FROM ${PYTHON_IMAGE} as kintro-base
 
 ENV PYTHON_VERSION=${PYTHON_VERSION}
-
-ARG KINTRO_REPO=https://github.com/brutog/kintro.git
-ARG KINTRO_BRANCH=master
 
 # SLOWISH
 RUN apk add gcc \
@@ -17,11 +14,26 @@ RUN apk add gcc \
 	    jq \
 	    bash
 
+VOLUME ["/data"]
+
+ENTRYPOINT ["kintro"]
+
+
+
+FROM kintro-base as kintro-repo
+
+ARG KINTRO_REPO=https://github.com/neckbeard-io/kintro.git
+ARG KINTRO_BRANCH=main
+
 RUN git clone ${KINTRO_REPO} kintro \
       && cd kintro \
       && git checkout ${KINTRO_BRANCH} \
       && pip install -e .
 
-VOLUME ["/data"]
 
-ENTRYPOINT ["kintro"]
+
+FROM kintro-base as kintro-pkg
+
+ARG KINTRO_VERSION=0.0.1rc1
+
+RUN pip install kintro==${KINTRO_VERSION}
