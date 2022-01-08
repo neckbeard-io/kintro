@@ -80,3 +80,30 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.NECKBEARD_IO_PYPI }}
+  deploy-docker:
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.6.15', '3.7.12', '3.8.12', '3.9.9', '3.10.1']
+        python-base: ['alpine3.15']
+
+    needs: [deploy]
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Login to DockerHub Registry
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.NECKBEARD_IO_DOCKERHUB_USERNAME }}
+          password: ${{ secrets.NECKBEARD_IO_DOCKERHUB_TOKEN }}
+      - name: Build and push kintro docker container ${{ matrix.python-version }}-${{ matrix.python-base }}
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+          PYTHON_BASE: ${{ matrix.python-base }}
+          DOCKERHUB_USERNAME: ${{ secrets.NECKBEARD_IO_DOCKERHUB_USERNAME }}
+        run: |
+          cd docker
+          DOCKER_BUILDKIT=1 docker build --target kintro-pkg -t ${DOCKERHUB_USERNAME}/kintro:${{github.ref_name}}-${PYTHON_VERSION}-${PYTHON_BASE} --build-arg KINTRO_VERSION=${{github.ref_name}} --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg PYTHON_BASE=${PYTHON_BASE} .
+          docker push ${DOCKERHUB_USERNAME}/kintro:${{github.ref_name}}-${PYTHON_VERSION}-${PYTHON_BASE}
