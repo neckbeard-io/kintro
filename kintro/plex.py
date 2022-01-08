@@ -23,7 +23,7 @@ from click_option_group import (
     AllOptionGroup,
     optgroup,
 )
-import enlighten  # type: ignore[import]
+import enlighten
 import more_itertools
 import plexapi.library
 import plexapi.server

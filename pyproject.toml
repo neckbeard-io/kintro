@@ -212,5 +212,6 @@ strict = true
 strict_optional = true
 no_implicit_optional = true
 overrides = [
-  { ignore_missing_imports = true, module="plexapi.*" }
+  { ignore_missing_imports = true, module="plexapi.*" },
+  { ignore_missing_imports = true, module="enlighten.*" },
 ]
