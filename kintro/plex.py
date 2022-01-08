@@ -5,16 +5,15 @@ import functools
 import itertools
 import json
 import os
-import queue
 import textwrap
 import threading
 import time
 from typing import (
     Any,
     Deque,
-    Dict,
     List,
     Optional,
+    cast,
 )
 
 from kintro.decisions import DECISION_TYPES
@@ -24,9 +23,11 @@ from click_option_group import (
     AllOptionGroup,
     optgroup,
 )
-import enlighten  # type: ignore[import]
+import enlighten
 import more_itertools
-from plexapi.video import Episode  # type: ignore[import]
+import plexapi.library
+import plexapi.server
+from plexapi.video import Episode
 
 
 @enum.unique
@@ -127,22 +128,24 @@ def sync(
 ) -> None:
     ctx.obj["logger"].info("Starting sync process")
 
-    plex = ctx.obj["plex"]
+    plex: plexapi.server.PlexServer = ctx.obj["plex"]
     libtype_val: LibType = LibType(libtype.lower())
     edit_val = DECISION_TYPES[edit]
 
     should_analyze = to_analyze(ctx, analyze_if_intro_missing=analyze_if_intro_missing, force_analyze=force_analyze)
 
     more_search = {"filters": json.loads(filter_json)} if filter_json is not None else {}
+    shows_section = cast(plexapi.library.ShowSection, plex.library.section(library))
+
     tv: List[Episode] = {  # type: ignore[no-untyped-call]
-        LibType.Episode: lambda: plex.library.section(library).search(libtype="episode", **more_search),
+        LibType.Episode: lambda: shows_section.search(**more_search, libtype="episode"),
         LibType.Show: lambda: list(
             itertools.chain(
                 *(
                     show.episodes()
-                    for show in plex.library.section(library).search(
-                        libtype="show",
+                    for show in shows_section.search(
                         **more_search,
+                        libtype="show",
                     )
                 ),
             )
@@ -250,7 +253,7 @@ def sync(
 
 
 def handle_episodes(
-    ix: int,
+    _ix: int,
     *,
     episodes_source: Deque[List[Episode]],
     results_sink: Deque[List[str]],
@@ -287,7 +290,7 @@ def handle_episodes(
                         should_analyze=should_analyze,
                     ),
                 )
-        except IndexError as e:
+        except IndexError as _e:
             if stop_event.is_set():
                 break
             ctx.obj["logger"].debug(
