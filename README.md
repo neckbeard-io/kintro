@@ -10,3 +10,6 @@
 
 ### CONTRIBUTING
 [Contributing Guide](CONTRIBUTING.md)
+
+### PACKAGING
+[Packaging Guide](PACKAGING.md)
