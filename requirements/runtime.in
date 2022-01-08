@@ -1,5 +1,5 @@
-click
-click_option_group
-enlighten
+click~=8.0.0
+click_option_group~=0.5.0
+enlighten~=1.0.0
 more_itertools>=7.1.0
-plexapi
+plexapi~=4.5.0

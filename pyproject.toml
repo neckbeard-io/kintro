@@ -6,7 +6,7 @@ write_to = "kintro/_version.py"
 
 [tool.black]
 line-length = 120
-target-version = ["py36", "py37", "py38", "py39"]
+target-version = ["py36", "py37", "py38", "py39", "py310"]
 extend-exclude = """
 /(
    | .cache
