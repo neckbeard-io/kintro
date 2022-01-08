@@ -1,5 +1,6 @@
 -r runtime.in
 -r style.in
+-r testing.in
 -r typing.in
 commitizen
 pip-tools
