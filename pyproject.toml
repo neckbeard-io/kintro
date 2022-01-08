@@ -215,3 +215,6 @@ overrides = [
   { ignore_missing_imports = true, module="plexapi.*" },
   { ignore_missing_imports = true, module="enlighten.*" },
 ]
+
+[tool.pytest.ini_options]
+addopts = "-rxXs"

@@ -4,7 +4,9 @@ import enum
 import functools
 import itertools
 import json
+import logging
 import os
+import sys
 import textwrap
 import threading
 import time
@@ -15,6 +17,12 @@ from typing import (
     Optional,
     cast,
 )
+
+
+if sys.version_info >= (3, 8):
+    from typing import TypedDict
+else:
+    from typing_extensions import TypedDict
 
 from kintro.decisions import DECISION_TYPES
 
@@ -30,6 +38,12 @@ import plexapi.server
 from plexapi.video import Episode
 
 
+class AppObj(TypedDict):
+    plex: plexapi.server.PlexServer
+    logger: logging.Logger
+    debug: bool
+
+
 @enum.unique
 class LibType(enum.Enum):
     Episode = "episode"
@@ -43,10 +57,10 @@ class Analyze(enum.Enum):
     ForceAnalyze = 2
 
 
-def to_analyze(ctx: click.Context, *, analyze_if_intro_missing: bool, force_analyze: bool) -> Analyze:
+def to_analyze(app_obj: AppObj, *, analyze_if_intro_missing: bool, force_analyze: bool) -> Analyze:
     if force_analyze:
         if analyze_if_intro_missing:
-            ctx.obj["logger"].warning("--force-analyze overrides --analyze-if-intro-missing")
+            app_obj["logger"].warning("--force-analyze overrides --analyze-if-intro-missing")
         return Analyze.ForceAnalyze
     if analyze_if_intro_missing:
         return Analyze.AnalyzeIfIntroMissing
@@ -126,13 +140,44 @@ def sync(
     analyze_if_intro_missing: bool,
     force_analyze: bool,
 ) -> None:
-    ctx.obj["logger"].info("Starting sync process")
+    app_obj: AppObj = ctx.obj
+    return sync_internal(
+        app_obj=app_obj,
+        library=library,
+        edit=edit,
+        dry_run=dry_run,
+        libtype=libtype,
+        filter_json=filter_json,
+        find_path=find_path,
+        replace_path=replace_path,
+        max_workers=max_workers,
+        worker_batch_size=worker_batch_size,
+        analyze_if_intro_missing=analyze_if_intro_missing,
+        force_analyze=force_analyze,
+    )
 
-    plex: plexapi.server.PlexServer = ctx.obj["plex"]
+
+def sync_internal(
+    app_obj: AppObj,
+    library: str,
+    edit: str,
+    dry_run: bool,
+    libtype: str,
+    filter_json: Optional[str],
+    find_path: Optional[str],
+    replace_path: Optional[str],
+    max_workers: int,
+    worker_batch_size: int,
+    analyze_if_intro_missing: bool,
+    force_analyze: bool,
+) -> None:
+    app_obj["logger"].info("Starting sync process")
+
+    plex: plexapi.server.PlexServer = app_obj["plex"]
     libtype_val: LibType = LibType(libtype.lower())
     edit_val = DECISION_TYPES[edit]
 
-    should_analyze = to_analyze(ctx, analyze_if_intro_missing=analyze_if_intro_missing, force_analyze=force_analyze)
+    should_analyze = to_analyze(app_obj, analyze_if_intro_missing=analyze_if_intro_missing, force_analyze=force_analyze)
 
     more_search = {"filters": json.loads(filter_json)} if filter_json is not None else {}
     shows_section = cast(plexapi.library.ShowSection, plex.library.section(library))
@@ -162,7 +207,7 @@ def sync(
                 else itertools.chain.from_iterable(more_itertools.ichunked(tv, worker_batch_size))
             ):
                 handle_episode(
-                    ctx=ctx,
+                    app_obj=app_obj,
                     episode=episode,
                     edit=edit_val,
                     find_path=find_path,
@@ -183,22 +228,22 @@ def sync(
             stop_event = threading.Event()
 
             def submit() -> None:
-                ctx.obj["logger"].debug("Putting all episodes in batched queue")
+                app_obj["logger"].debug("Putting all episodes in batched queue")
                 for episodes in tv_chunked:
-                    ctx.obj["logger"].debug(f"Putting chunk of episodes in batched queue")
+                    app_obj["logger"].debug(f"Putting chunk of episodes in batched queue")
                     batch_queue.append(list(episodes))
                     start_event.set()
                     time.sleep(0.01)
                 start_event.set()
-                ctx.obj["logger"].debug("Sending stop event")
+                app_obj["logger"].debug("Sending stop event")
                 stop_event.set()
 
             # Start the submitter in a background thread
-            ctx.obj["logger"].debug(f"Starting submitter background thread")
+            app_obj["logger"].debug(f"Starting submitter background thread")
             submitter = concurrent.futures.ThreadPoolExecutor(max_workers=1)
             submitter_res = submitter.submit(submit)
 
-            ctx.obj["logger"].debug(
+            app_obj["logger"].debug(
                 f"Starting processing pool with max #{max_workers} workers and batch size {worker_batch_size}"
             )
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
@@ -206,7 +251,7 @@ def sync(
             # Bind all the non varying args for the worker function
             handle_eps = functools.partial(
                 handle_episodes,
-                ctx=ctx,
+                app_obj=app_obj,
                 edit=edit_val,
                 find_path=find_path,
                 replace_path=replace_path,
@@ -219,35 +264,35 @@ def sync(
                 should_analyze=should_analyze,
             )
 
-            ctx.obj["logger"].debug(f"Starting worker fucntions on pool threads (#{max_workers})")
+            app_obj["logger"].debug(f"Starting worker fucntions on pool threads (#{max_workers})")
             res = executor.map(
                 handle_eps,
                 [x for x in range(0, max_workers)],
             )
 
-            ctx.obj["logger"].debug("Requesting the submitter be destroyed")
+            app_obj["logger"].debug("Requesting the submitter be destroyed")
             submitter.shutdown()
-            ctx.obj["logger"].debug("Requesting the worker pool be destroyed")
+            app_obj["logger"].debug("Requesting the worker pool be destroyed")
             executor.shutdown()
 
-            if ctx.obj["debug"]:
+            if app_obj["debug"]:
                 try:
                     for r in res:
-                        ctx.obj["logger"].debug(f"Worker thread launch result: {r}")
+                        app_obj["logger"].debug(f"Worker thread launch result: {r}")
                 except Exception as e:
-                    ctx.obj["logger"].exception(f"Error while checking worker thread status {e}")
+                    app_obj["logger"].exception(f"Error while checking worker thread status {e}")
 
                 try:
-                    ctx.obj["logger"].debug(f"Submitter thread status {submitter_res.result()}")
+                    app_obj["logger"].debug(f"Submitter thread status {submitter_res.result()}")
                 except Exception as e:
-                    ctx.obj["logger"].exception(f"Error while checking submitter thread status {e}")
+                    app_obj["logger"].exception(f"Error while checking submitter thread status {e}")
 
                 while True:
-                    ctx.obj["logger"].debug("Looping on results")
+                    app_obj["logger"].debug("Looping on results")
                     try:
                         result = results.pop()
                         if len(result) > 0:
-                            ctx.obj["logger"].debug(result)
+                            app_obj["logger"].debug(result)
                     except IndexError:
                         break
 
@@ -259,7 +304,7 @@ def handle_episodes(
     results_sink: Deque[List[str]],
     start_event: threading.Event,
     stop_event: threading.Event,
-    ctx: click.Context,
+    app_obj: AppObj,
     edit: DECISION_TYPES,
     find_path: Optional[str],
     replace_path: Optional[str],
@@ -267,20 +312,20 @@ def handle_episodes(
     pbar: Any,
     should_analyze: Analyze,
 ) -> None:
-    ctx.obj["logger"].info(f"Starting a episodes thread {threading.current_thread().name}")
-    ctx.obj["logger"].debug(f"Waiting for start event on thread {threading.current_thread().name}")
+    app_obj["logger"].info(f"Starting a episodes thread {threading.current_thread().name}")
+    app_obj["logger"].debug(f"Waiting for start event on thread {threading.current_thread().name}")
     start_event.wait()
-    ctx.obj["logger"].debug(f"Done Waiting for start event on thread {threading.current_thread().name}")
+    app_obj["logger"].debug(f"Done Waiting for start event on thread {threading.current_thread().name}")
     while True:
         try:
             episodes = list(episodes_source.pop())
-            ctx.obj["logger"].debug(
+            app_obj["logger"].debug(
                 f"Starting a batch of {len(episodes)} episodes on thread {threading.current_thread().name}"
             )
             for episode in episodes:
                 results_sink.append(
                     handle_episode(
-                        ctx=ctx,
+                        app_obj=app_obj,
                         episode=episode,
                         edit=edit,
                         find_path=find_path,
@@ -293,12 +338,12 @@ def handle_episodes(
         except IndexError as _e:
             if stop_event.is_set():
                 break
-            ctx.obj["logger"].debug(
+            app_obj["logger"].debug(
                 f"Nothing in queue to process in {threading.current_thread().name} continuing in 1 second"
             )
             time.sleep(1)
         except Exception as e:
-            ctx.obj["logger"].warning(
+            app_obj["logger"].warning(
                 f"Exception {e} in {threading.current_thread().name} while handling batch of episodes, continuing..."
             )
             continue
@@ -306,7 +351,7 @@ def handle_episodes(
 
 
 def handle_episode(
-    ctx: click.Context,
+    app_obj: AppObj,
     episode: Episode,
     edit: DECISION_TYPES,
     find_path: Optional[str],
@@ -317,14 +362,14 @@ def handle_episode(
 ) -> List[str]:
     files_to_modify = []
 
-    ctx.obj["logger"].debug(
+    app_obj["logger"].debug(
         f'Checking for intro marker show="{episode.grandparentTitle}"'
         f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"',
     )
 
     def may_analyze(cond: bool, message: str) -> None:
         if cond:
-            ctx.obj["logger"].info(
+            app_obj["logger"].info(
                 f'{message}: show="{episode.grandparentTitle}"'
                 f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"'
             )
@@ -337,7 +382,7 @@ def handle_episode(
             not episode.hasIntroMarker and should_analyze == Analyze.AnalyzeIfIntroMissing, "Missing intro, analyzing"
         )
         # This call is EXTREMELY expensive, do not prefilter on it (this lets threads bear the weight)
-        if episode.hasIntroMarker:
+        if episode.hasIntroMarker and len([marker for marker in episode.markers if marker.type == "intro"]) > 0:
             # multiple markers can exist for a file. only want type intro,
             # but it's possible there could be more than one intro
             for marker in episode.markers:
@@ -359,20 +404,20 @@ def handle_episode(
 
                         files_to_modify.append(file_path)
 
-                        ctx.obj["logger"].info(
+                        app_obj["logger"].info(
                             f'show="{episode.grandparentTitle}"'
                             f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"'
                             f' location="{episode.locations} start={start} end={end} file="{file_path}"',
                         )
         # we should log when we don't find an intro
         else:
-            ctx.obj["logger"].info(
+            app_obj["logger"].info(
                 f'show="{episode.grandparentTitle}"'
                 f' season={episode.seasonNumber} episode={episode.episodeNumber} title="{episode.title}"'
                 f' location="{episode.locations} msg="No intro markers found"',
             )
     except Exception as e:
-        ctx.obj["logger"].warning(
+        app_obj["logger"].warning(
             f"Exception {e} in {threading.current_thread().name} while handling and episode, continuing..."
         )
     # always update the progress bar
