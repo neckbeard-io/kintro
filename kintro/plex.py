@@ -67,19 +67,18 @@ def to_analyze(app_obj: AppObj, *, analyze_if_intro_missing: bool, force_analyze
     return Analyze.NoAnalyze
 
 
-@click.command()
+@click.command(context_settings={"show_default": True})
 @click.option("--library", required=True, default="TV Shows", help="Plex library to operate on")
 @click.option(
     "--edit",
     type=click.Choice(["cut", "mute", "scene", "commercial"]),
     default="scene",
-    # TODO: convert all this help stuff to docstring format
-    help=(
-        "cut: Makes it so the intro is completely gone "
-        "mute: Makes it so the intro's audio is muted "
-        "scene: Makes it so the nextscene action skips to the end of the intro "
-        "commercial: Makes it so the intro is skipped once (like cut), but is then seekable after"
-    ),
+    help="""\b
+    cut: Makes it so the intro is completely gone
+    mute: Makes it so the intro's audio is muted
+    scene: Makes it so the nextscene action skips to the end of the intro
+    commercial: Makes it so the intro is skipped once (like cut), but is then seekable after
+    """,
 )
 @click.option(
     "--dry-run",
