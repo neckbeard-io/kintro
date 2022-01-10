@@ -92,6 +92,12 @@ jobs:
     needs: [deploy]
 
     steps:
+      - uses: cygnetdigital/wait_for_response@v2.0.0
+        with:
+          url: 'https://pypi.org/project/kintro/${{github.ref_name}}/'
+          responseCode: '200'
+          timeout: 10000
+          interval: 2000
       - uses: actions/checkout@v1
       - name: Login to DockerHub Registry
         uses: docker/login-action@v1
