@@ -80,6 +80,8 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.NECKBEARD_IO_PYPI }}
+        skip_existing: true
+
   deploy-docker:
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
 
@@ -98,6 +100,14 @@ jobs:
           responseCode: '200'
           timeout: 10000
           interval: 2000
+      - name: Really wait for pip
+        run: |
+          while true; do
+            if pip install kintro==asdf |& grep ${{github.ref_name}}; then
+              break;
+            fi
+            sleep 5
+          done
       - uses: actions/checkout@v2
       - name: Login to DockerHub Registry
         uses: docker/login-action@v1
