@@ -18,7 +18,6 @@ from typing import (
     cast,
 )
 
-
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
@@ -106,23 +105,19 @@ def to_analyze(app_obj: AppObj, *, analyze_if_intro_missing: bool, force_analyze
     "--analyze-if-intro-missing",
     default=False,
     is_flag=True,
-    help=textwrap.dedent(
-        """\
+    help=textwrap.dedent("""\
         (Advanced) Perform analyze on episode if intro is missing (potentially expensive)
             Take care with this flag and --max-workers or unfiltered libraries
-    """
-    ),
+    """),
 )
 @click.option(
     "--force-analyze",
     default=False,
     is_flag=True,
-    help=textwrap.dedent(
-        """\
+    help=textwrap.dedent("""\
         (Advanced) Perform analyze on episode (Overrides --analyze-if-intro-missing) (potentially very expensive)
             Take care with this flag and --max-workers or unfiltered libraries
-    """
-    ),
+    """),
 )
 @click.pass_context
 def sync(
