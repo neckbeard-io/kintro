@@ -7,7 +7,7 @@ import sys
 
 def main(args):
     requirements_file_path = args[1]
-    (requirements_base_path, requirements_file) = (
+    requirements_base_path, requirements_file = (
         os.path.dirname(requirements_file_path),
         os.path.basename(requirements_file_path),
     )
